@@ -1,0 +1,355 @@
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ユーザー管理システム</title>
+    <style>
+        /* --- 基本設定 --- */
+        :root {
+            --primary-color: #007bff;
+            --danger-color: #dc3545;
+            --light-gray: #f8f9fa;
+            --gray: #6c757d;
+            --border-color: #dee2e6;
+            --background-color: #f4f6f9;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: #fff;
+            padding: 2rem 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 700px;
+        }
+        h1, h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
+        hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+
+        /* --- フォームと入力 --- */
+        form { display: flex; flex-direction: column; gap: 12px; }
+        input[type="text"], input[type="email"], input[type="password"] {
+            padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        .auth-toggle { text-align: center; margin-top: 1rem; cursor: pointer; color: var(--primary-color); font-weight: 500; }
+        .auth-toggle:hover { text-decoration: underline; }
+
+        /* --- ボタン --- */
+        .btn {
+            padding: 12px 15px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-primary { background-color: var(--primary-color); color: #fff; }
+        .btn-primary:hover { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2); }
+        .btn-danger { background-color: var(--danger-color); color: #fff; }
+        .btn-secondary { background-color: var(--gray); color: #fff; }
+
+        /* --- ユーザーリスト --- */
+        #user-list { list-style: none; padding: 0; margin-top: 1.5rem; }
+        #user-list li {
+            background: var(--light-gray); padding: 1rem; border-radius: 8px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+            gap: 10px; border: 1px solid var(--border-color);
+        }
+        .user-details { word-break: break-all; }
+        .user-actions { display: flex; gap: 8px; }
+
+        /* --- ヘッダー --- */
+        #user-info {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+        }
+        #welcome-message { font-size: 1.2rem; font-weight: 600; margin: 0; }
+        #logout-button { background-color: #6c757d; }
+        #logout-button:hover { background-color: #5a6268; }
+
+        /* --- ★★★ モーダルウィンドウのスタイル ★★★ --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center;
+            align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: #fff; padding: 2rem; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); width: 100%; max-width: 400px;
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute; top: 15px; right: 15px; background: transparent;
+            border: none; font-size: 1.5rem; cursor: pointer; color: #aaa;
+        }
+        .modal-close-btn:hover { color: #333; }
+
+        /* --- 表示/非表示 --- */
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="auth-view">
+        <div id="login-container">
+            <h2>ログイン</h2>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="メールアドレス" required>
+                <input type="password" id="login-password" placeholder="パスワード" required>
+                <button type="submit" class="btn btn-primary">ログイン</button>
+            </form>
+            <p class="auth-toggle" onclick="toggleAuthView()">新規登録はこちら</p>
+        </div>
+        <div id="register-container" class="hidden">
+            <h2>新規登録</h2>
+            <form id="register-form">
+                <input type="text" id="register-name" placeholder="名前" required>
+                <input type="email" id="register-email" placeholder="メールアドレス" required>
+                <input type="password" id="register-password" placeholder="パスワード" required>
+                <button type="submit" class="btn btn-primary">登録</button>
+            </form>
+            <p class="auth-toggle" onclick="toggleAuthView()">ログインはこちら</p>
+        </div>
+    </div>
+
+    <div id="app-view" class="hidden">
+        <div id="user-info">
+            <h2 id="welcome-message" style="margin: 0;"></h2>
+            <div>
+                <button id="open-password-modal-btn" class="btn btn-secondary">パスワード変更</button>
+                <button id="logout-button" class="btn btn-secondary">ログアウト</button>
+            </div>
+        </div>
+        <hr>
+        <h2>ユーザー管理ダッシュボード</h2>
+        <ul id="user-list"></ul>
+    </div>
+</div>
+
+<div id="password-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <button id="close-password-modal-btn" class="modal-close-btn">&times;</button>
+        <h3>パスワード変更</h3>
+        <form id="password-change-form">
+            <input type="password" id="new-password-input" placeholder="新しいパスワード (8文字以上)" required minlength="8">
+            <button type="submit" class="btn btn-primary">変更を保存</button>
+        </form>
+    </div>
+</div>
+
+
+<script>
+    const authView = document.getElementById('auth-view');
+    const appView = document.getElementById('app-view');
+    const loginContainer = document.getElementById('login-container');
+    const registerContainer = document.getElementById('register-container');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const userList = document.getElementById('user-list');
+    const logoutButton = document.getElementById('logout-button');
+    const welcomeMessage = document.getElementById('welcome-message');
+
+    const passwordModal = document.getElementById('password-modal');
+    const openPasswordModalBtn = document.getElementById('open-password-modal-btn');
+    const closePasswordModalBtn = document.getElementById('close-password-modal-btn');
+    const passwordChangeForm = document.getElementById('password-change-form');
+
+
+    function toggleAuthView() {
+        loginContainer.classList.toggle('hidden');
+        registerContainer.classList.toggle('hidden');
+    }
+    
+    async function updateView() {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            authView.classList.add('hidden');
+            appView.classList.remove('hidden');
+            await fetchAndDisplayUsers(token);
+        } else {
+            authView.classList.remove('hidden');
+            appView.classList.add('hidden');
+        }
+    }
+
+    async function fetchAndDisplayUsers(token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userRole = payload.role;
+        welcomeMessage.textContent = `ようこそ, ${payload.email} さん`;
+
+        try {
+            const response = await fetch('/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (response.status === 401) return handleLogout();
+            if (!response.ok) throw new Error('Not authorized');
+            
+            const users = await response.json();
+            userList.innerHTML = '';
+            users.forEach(user => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="user-details">
+                        <strong>${user.name}</strong> (${user.role})<br>
+                        <small>${user.email}</small>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn btn-danger delete-btn" data-id="${user.id}">削除</button>
+                    </div>
+                `;
+                userList.appendChild(li);
+            });
+        } catch (error) {
+            userList.innerHTML = '<li>(管理者ではないため、管理ダッシュボードは表示できません)</li>';
+        }
+    }
+
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        
+        try {
+            const res = await fetch('/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || '登録に失敗しました');
+            }
+            alert('登録が完了しました。ログインしてください。');
+            toggleAuthView();
+            registerForm.reset();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            if (!res.ok) throw new Error('メールアドレスまたはパスワードが違います');
+            const data = await res.json();
+            localStorage.setItem('authToken', data.token);
+            updateView();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    function handleLogout() {
+        localStorage.removeItem('authToken');
+        updateView();
+    }
+    logoutButton.addEventListener('click', handleLogout);
+    
+    userList.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const id = e.target.dataset.id;
+            if (confirm(`ID: ${id} のユーザーを本当に削除しますか？`)) {
+                try {
+                    const token = localStorage.getItem('authToken');
+                    await fetch(`/users/${id}`, { 
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    updateView();
+                } catch (error) { alert('削除に失敗しました。'); }
+            }
+        }
+    });
+
+    openPasswordModalBtn.addEventListener('click', () => {
+        passwordModal.classList.remove('hidden');
+    });
+    closePasswordModalBtn.addEventListener('click', () => {
+        passwordModal.classList.add('hidden');
+    });
+    // モーダルの外側をクリックしても閉じる
+    passwordModal.addEventListener('click', (e) => {
+        if (e.target === passwordModal) {
+            passwordModal.classList.add('hidden');
+        }
+    });
+    
+    passwordChangeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newPasswordInput = document.getElementById('new-password-input');
+        const newPassword = newPasswordInput.value;
+        const token = localStorage.getItem('authToken');
+        if (!token) return alert('ログインしていません。');
+
+        try {
+            const res = await fetch('/users/me/password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ newPassword })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'パスワードの変更に失敗しました。');
+            
+            alert(data.message);
+            newPasswordInput.value = '';
+            passwordModal.classList.add('hidden'); // モーダルを閉じる
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    updateView();
+
+    // パスワード変更フォームのイベントリスナー
+    document.getElementById('password-change-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newPassword = document.getElementById('new-password-input').value;
+        const token = localStorage.getItem('authToken');
+
+        if (!token) {
+            alert('ログインしていません。');
+            return;
+        }
+
+        try {
+            const res = await fetch('/users/me/password', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ newPassword })
+            });
+
+            const data = await res.json();
+            
+            if (!res.ok) {
+                throw new Error(data.error || 'パスワードの変更に失敗しました。');
+            }
+
+            alert(data.message); // 成功メッセージを表示
+            document.getElementById('password-change-form').reset(); // フォームをリセット
+
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+</script>
+
+</body>
+</html>
