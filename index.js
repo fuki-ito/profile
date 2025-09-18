@@ -89,6 +89,30 @@ app.post('/login', async (req, res) => {
 
 // ## 認証済みユーザールート ##
 
+// [Update] ログイン中のユーザーが自身のメールアドレスを変更
+app.put('/users/me/email', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const { newEmail } = req.body;
+
+  if (!newEmail) {
+    return res.status(400).json({ error: '新しいメールアドレスは必須です。' });
+  }
+
+  try {
+    await pool.query(
+      "UPDATE users SET email = $1 WHERE id = $2",
+      [newEmail, userId]
+    );
+    res.status(200).json({ message: 'メールアドレスが正常に更新されました。新しいメールアドレスで再ログインしてください。' });
+  } catch (err) {
+    if (err.code === '23505') { // PostgreSQLの重複エラーコード
+      return res.status(409).json({ error: 'そのメールアドレスは既に使用されています。' });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'サーバーエラーが発生しました。' });
+  }
+});
+
 // [Update] ログイン中のユーザーが自身のパスワードを変更
 app.put('/users/me/password', authenticateToken, async (req, res) => {
   const userId = req.user.id;
@@ -101,6 +125,19 @@ app.put('/users/me/password', authenticateToken, async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
     await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, userId]);
     res.status(200).json({ message: 'パスワードが正常に更新されました。' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'サーバーエラーが発生しました。' });
+  }
+});
+
+// 【DELETE】ログイン中のユーザーが自身のアカウントを削除
+app.delete('/users/me', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    res.status(204).send(); // 成功したが中身はない
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'サーバーエラーが発生しました。' });
