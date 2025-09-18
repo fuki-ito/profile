@@ -357,9 +357,14 @@
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!res.ok) throw new Error('アカウントの削除に失敗しました。');
+
             alert('アカウントが削除されました。');
+            settingsModal.classList.add('hidden');
             handleLogout();
-        } catch (error) { alert(error.message); }
+            
+        } catch (error) {
+            alert(error.message);
+        }
     });
 
     updateView();
