@@ -1,4 +1,4 @@
-// --- 必要なモジュールのインポート ---
+// --- インポート ---
 const express = require('express');
 const pool = require('./db');      // データベース接続プール
 const bcrypt = require('bcrypt');    // パスワードハッシュ化
@@ -53,7 +53,7 @@ app.post('/users', async (req, res) => {
     );
     res.status(201).json({ id: result.rows[0].id, name, email });
   } catch (err) {
-    if (err.code === '23505') { // PostgreSQLの重複エラーコード
+    if (err.code === '23505') {
       return res.status(409).json({ error: 'そのメールアドレスは既に使用されています。' });
     }
     console.error(err);
@@ -105,7 +105,7 @@ app.put('/users/me/email', authenticateToken, async (req, res) => {
     );
     res.status(200).json({ message: 'メールアドレスが正常に更新されました。新しいメールアドレスで再ログインしてください。' });
   } catch (err) {
-    if (err.code === '23505') { // PostgreSQLの重複エラーコード
+    if (err.code === '23505') {
       return res.status(409).json({ error: 'そのメールアドレスは既に使用されています。' });
     }
     console.error(err);
@@ -137,7 +137,7 @@ app.delete('/users/me', authenticateToken, async (req, res) => {
 
   try {
     await pool.query("DELETE FROM users WHERE id = $1", [userId]);
-    res.status(204).send(); // 成功したが中身はない
+    res.status(204).send();
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'サーバーエラーが発生しました。' });
