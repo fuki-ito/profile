@@ -317,8 +317,12 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             alert(data.message);
-            handleLogout(); // 変更後は強制的にログアウト
-        } catch (error) { alert(error.message); }
+            settingsModal.classList.add('hidden');
+            handleLogout();
+            
+        } catch (error) {
+            alert(error.message);
+        }
     });
     
     // パスワード変更
@@ -340,7 +344,8 @@
             
             alert(data.message);
             newPasswordInput.value = '';
-            settingsModal.classList.add('hidden'); // モーダルを閉じる
+            settingsModal.classList.add('hidden');
+
         } catch (error) {
             alert(error.message);
         }
@@ -361,7 +366,7 @@
             alert('アカウントが削除されました。');
             settingsModal.classList.add('hidden');
             handleLogout();
-            
+
         } catch (error) {
             alert(error.message);
         }
