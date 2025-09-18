@@ -124,7 +124,7 @@
         <div id="user-info">
             <h2 id="welcome-message" style="margin: 0;"></h2>
             <div>
-                <button id="open-password-modal-btn" class="btn btn-secondary">パスワード変更</button>
+                <button id="open-settings-modal-btn" class="btn btn-secondary">アカウント設定</button>
                 <button id="logout-button" class="btn btn-secondary">ログアウト</button>
             </div>
         </div>
@@ -174,9 +174,9 @@
     const logoutButton = document.getElementById('logout-button');
     const welcomeMessage = document.getElementById('welcome-message');
 
-    const passwordModal = document.getElementById('password-modal');
-    const openPasswordModalBtn = document.getElementById('open-password-modal-btn');
-    const closePasswordModalBtn = document.getElementById('close-password-modal-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const openSettingsModalBtn = document.getElementById('open-settings-modal-btn');
+    const closeSettingsModalBtn = document.getElementById('close-settings-modal-btn');
     const emailChangeForm = document.getElementById('email-change-form');
     const passwordChangeForm = document.getElementById('password-change-form');
     const deleteAccountBtn = document.getElementById('delete-account-btn');
@@ -301,7 +301,7 @@
     settingsModal.addEventListener('click', (e) => {
         if (e.target === settingsModal) settingsModal.classList.add('hidden');
     });
-    
+
     // メールアドレス変更
     emailChangeForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -320,10 +320,32 @@
             handleLogout(); // 変更後は強制的にログアウト
         } catch (error) { alert(error.message); }
     });
-
-    // パスワード変更
-    passwordChangeForm.addEventListener('submit', async (e) => { /* ... (変更なし) ... */ });
     
+    // パスワード変更
+    passwordChangeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newPasswordInput = document.getElementById('new-password-input');
+        const newPassword = newPasswordInput.value;
+        const token = localStorage.getItem('authToken');
+        if (!token) return alert('ログインしていません。');
+
+        try {
+            const res = await fetch('/users/me/password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ newPassword })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'パスワードの変更に失敗しました。');
+            
+            alert(data.message);
+            newPasswordInput.value = '';
+            passwordModal.classList.add('hidden'); // モーダルを閉じる
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
     // アカウント削除
     deleteAccountBtn.addEventListener('click', async () => {
         if (!confirm('本当にアカウントを削除しますか？この操作は取り消せません。')) return;
